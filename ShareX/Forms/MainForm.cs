@@ -1015,6 +1015,11 @@ namespace ShareX
             TaskHelpers.OpenAutoCapture();
         }
 
+        private void tsmiWebpageCapture_Click(object sender, EventArgs e)
+        {
+            TaskHelpers.OpenWebpageCapture();
+        }
+
         private void tsbApplicationSettings_Click(object sender, EventArgs e)
         {
             using (ApplicationSettingsForm settingsForm = new ApplicationSettingsForm())
@@ -1571,6 +1576,15 @@ namespace ShareX
                 case HotkeyType.LastRegion:
                     CaptureScreenshot(CaptureType.LastRegion, safeTaskSettings, false);
                     break;
+                case HotkeyType.CaptureWebpage:
+                    TaskHelpers.OpenWebpageCapture(safeTaskSettings);
+                    break;
+                case HotkeyType.AutoCapture:
+                    TaskHelpers.OpenAutoCapture();
+                    break;
+                case HotkeyType.StartAutoCapture:
+                    TaskHelpers.StartAutoCapture();
+                    break;
                 // Screen record
                 case HotkeyType.ScreenRecorder:
                     TaskHelpers.StartScreenRecording(ScreenRecordOutput.FFmpeg, ScreenRecordStartMethod.Region, safeTaskSettings);
@@ -1591,12 +1605,6 @@ namespace ShareX
                     TaskHelpers.StartScreenRecording(ScreenRecordOutput.GIF, ScreenRecordStartMethod.LastRegion, safeTaskSettings);
                     break;
                 // Tools
-                case HotkeyType.AutoCapture:
-                    TaskHelpers.OpenAutoCapture();
-                    break;
-                case HotkeyType.StartAutoCapture:
-                    TaskHelpers.StartAutoCapture();
-                    break;
                 case HotkeyType.ColorPicker:
                     TaskHelpers.OpenColorPicker();
                     break;

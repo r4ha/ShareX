@@ -499,6 +499,22 @@ namespace ShareX
             AutoCaptureForm.Instance.ShowActivate();
         }
 
+        public static void OpenWebpageCapture(TaskSettings taskSettings = null)
+        {
+            if (taskSettings == null) taskSettings = TaskSettings.GetDefaultTaskSettings();
+
+            WebpageCaptureForm webpageCaptureForm = new WebpageCaptureForm();
+            webpageCaptureForm.OnImageUploadRequested += img => UploadManager.RunImageTask(img, taskSettings);
+            webpageCaptureForm.OnImageCopyRequested += img =>
+            {
+                using (img)
+                {
+                    ClipboardHelpers.CopyImage(img);
+                }
+            };
+            webpageCaptureForm.Show();
+        }
+
         public static void StartAutoCapture()
         {
             if (!AutoCaptureForm.IsRunning)

@@ -167,6 +167,9 @@ namespace ShareX
         FreeHandRegion,
         CustomRegion,
         LastRegion,
+        CaptureWebpage,
+        AutoCapture,
+        StartAutoCapture,
         // Screen record
         ScreenRecorder,
         ScreenRecorderActiveWindow,
@@ -175,8 +178,6 @@ namespace ShareX
         ScreenRecorderGIFActiveWindow,
         StartScreenRecorderGIF,
         // Tools
-        AutoCapture,
-        StartAutoCapture,
         ColorPicker,
         ScreenColorPicker,
         ImageEditor,
