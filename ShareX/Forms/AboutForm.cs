@@ -62,12 +62,13 @@ MediaFire support: https://github.com/michalx2
 Pushbullet support: https://github.com/BallisticLingonberries
 Lambda support: https://github.com/marcusant
 VideoBin support: https://github.com/corey-/
+Up1 support: https://github.com/Upload
 
 {1}:
 
 Turkish: https://github.com/muratmoon
 German: https://github.com/Starbug2
-French: https://github.com/nwies
+French: https://github.com/nwies / https://github.com/Shadorc
 Simplified Chinese: https://github.com/jiajiechan
 Hungarian: https://github.com/devBluestar
 Korean: https://github.com/123jimin
