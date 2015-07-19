@@ -558,6 +558,7 @@ namespace ShareX
             }
 
             UpdateControls();
+            UpdateToggleHotkeyButton();
 
             TaskbarManager.Enabled = Program.Settings.TaskbarProgressEnabled;
         }
@@ -788,6 +789,21 @@ namespace ShareX
 
             tsMain.Visible = lblSplitter.Visible = Program.Settings.ShowMenu;
             Refresh();
+        }
+
+        public void UpdateToggleHotkeyButton()
+        {
+            // TODO: Translate
+            if (Program.Settings.DisableHotkeys)
+            {
+                tsmiTrayToggleHotkeys.Text = "Enable hotkeys";
+                tsmiTrayToggleHotkeys.Image = Resources.keyboard__plus;
+            }
+            else
+            {
+                tsmiTrayToggleHotkeys.Text = "Disable hotkeys";
+                tsmiTrayToggleHotkeys.Image = Resources.keyboard__minus;
+            }
         }
 
         #region Form events
@@ -1058,6 +1074,11 @@ namespace ShareX
 
             UpdateWorkflowsMenu();
             Program.HotkeysConfig.SaveAsync(Program.HotkeysConfigFilePath);
+        }
+
+        private void tsmiTrayToggleHotkeys_Click(object sender, EventArgs e)
+        {
+            TaskHelpers.ToggleHotkeys();
         }
 
         private void tsbDestinationSettings_Click(object sender, EventArgs e)
@@ -1489,7 +1510,15 @@ namespace ShareX
 
             if (hotkeySetting.TaskSettings.Job != HotkeyType.None)
             {
-                ExecuteJob(hotkeySetting.TaskSettings);
+                if (hotkeySetting.TaskSettings.Job == HotkeyType.DisableHotkeys)
+                {
+                    TaskHelpers.ToggleHotkeys();
+                }
+
+                if (!Program.Settings.DisableHotkeys)
+                {
+                    ExecuteJob(hotkeySetting.TaskSettings);
+                }
             }
         }
 
@@ -1526,7 +1555,7 @@ namespace ShareX
                     UploadManager.UploadURL(safeTaskSettings);
                     break;
                 case HotkeyType.DragDropUpload:
-                    TaskHelpers.OpenDropWindow();
+                    TaskHelpers.OpenDropWindow(safeTaskSettings);
                     break;
                 case HotkeyType.StopUploads:
                     TaskManager.StopAllTasks();
@@ -1555,18 +1584,6 @@ namespace ShareX
                     break;
                 case HotkeyType.RectangleTransparent:
                     CaptureRectangleTransparent(safeTaskSettings, false);
-                    break;
-                case HotkeyType.RoundedRectangleRegion:
-                    CaptureScreenshot(CaptureType.RoundedRectangle, safeTaskSettings, false);
-                    break;
-                case HotkeyType.EllipseRegion:
-                    CaptureScreenshot(CaptureType.Ellipse, safeTaskSettings, false);
-                    break;
-                case HotkeyType.TriangleRegion:
-                    CaptureScreenshot(CaptureType.Triangle, safeTaskSettings, false);
-                    break;
-                case HotkeyType.DiamondRegion:
-                    CaptureScreenshot(CaptureType.Diamond, safeTaskSettings, false);
                     break;
                 case HotkeyType.PolygonRegion:
                     CaptureScreenshot(CaptureType.Polygon, safeTaskSettings, false);
@@ -1672,10 +1689,6 @@ namespace ShareX
                     break;
                 case CaptureType.Rectangle:
                 case CaptureType.RectangleWindow:
-                case CaptureType.RoundedRectangle:
-                case CaptureType.Ellipse:
-                case CaptureType.Triangle:
-                case CaptureType.Diamond:
                 case CaptureType.Polygon:
                 case CaptureType.Freehand:
                     CaptureRegion(captureType, taskSettings, autoHideForm);
@@ -1769,8 +1782,7 @@ namespace ShareX
 
         private bool IsRegionCapture(CaptureType captureType)
         {
-            return captureType.HasFlagAny(CaptureType.RectangleWindow, CaptureType.Rectangle, CaptureType.RoundedRectangle, CaptureType.Ellipse,
-                CaptureType.Triangle, CaptureType.Diamond, CaptureType.Polygon, CaptureType.Freehand, CaptureType.LastRegion);
+            return captureType.HasFlagAny(CaptureType.RectangleWindow, CaptureType.Rectangle, CaptureType.Polygon, CaptureType.Freehand, CaptureType.LastRegion);
         }
 
         private void CaptureActiveWindow(TaskSettings taskSettings, bool autoHideForm = true)
@@ -1859,18 +1871,6 @@ namespace ShareX
                     rectangleRegion.AreaManager.WindowCaptureMode = true;
                     rectangleRegion.AreaManager.IncludeControls = true;
                     surface = rectangleRegion;
-                    break;
-                case CaptureType.RoundedRectangle:
-                    surface = new RoundedRectangleRegion();
-                    break;
-                case CaptureType.Ellipse:
-                    surface = new EllipseRegion();
-                    break;
-                case CaptureType.Triangle:
-                    surface = new TriangleRegion();
-                    break;
-                case CaptureType.Diamond:
-                    surface = new DiamondRegion();
                     break;
                 case CaptureType.Polygon:
                     surface = new PolygonRegion();
@@ -2177,19 +2177,14 @@ namespace ShareX
             }
         }
 
-        private void tsmiWindowRectangle_Click(object sender, EventArgs e)
-        {
-            CaptureScreenshot(CaptureType.RectangleWindow);
-        }
-
         private void tsmiRectangle_Click(object sender, EventArgs e)
         {
             CaptureScreenshot(CaptureType.Rectangle);
         }
 
-        private void tsmiRoundedRectangle_Click(object sender, EventArgs e)
+        private void tsmiWindowRectangle_Click(object sender, EventArgs e)
         {
-            CaptureScreenshot(CaptureType.RoundedRectangle);
+            CaptureScreenshot(CaptureType.RectangleWindow);
         }
 
         private void tsmiRectangleAnnotate_Click(object sender, EventArgs e)
@@ -2205,21 +2200,6 @@ namespace ShareX
         private void tsmiRectangleTransparent_Click(object sender, EventArgs e)
         {
             CaptureRectangleTransparent();
-        }
-
-        private void tsmiEllipse_Click(object sender, EventArgs e)
-        {
-            CaptureScreenshot(CaptureType.Ellipse);
-        }
-
-        private void tsmiTriangle_Click(object sender, EventArgs e)
-        {
-            CaptureScreenshot(CaptureType.Triangle);
-        }
-
-        private void tsmiDiamond_Click(object sender, EventArgs e)
-        {
-            CaptureScreenshot(CaptureType.Diamond);
         }
 
         private void tsmiPolygon_Click(object sender, EventArgs e)
@@ -2303,26 +2283,6 @@ namespace ShareX
         private void tsmiTrayRectangleTransparent_Click(object sender, EventArgs e)
         {
             CaptureRectangleTransparent(null, false);
-        }
-
-        private void tsmiTrayRoundedRectangle_Click(object sender, EventArgs e)
-        {
-            CaptureScreenshot(CaptureType.RoundedRectangle, null, false);
-        }
-
-        private void tsmiTrayEllipse_Click(object sender, EventArgs e)
-        {
-            CaptureScreenshot(CaptureType.Ellipse, null, false);
-        }
-
-        private void tsmiTrayTriangle_Click(object sender, EventArgs e)
-        {
-            CaptureScreenshot(CaptureType.Triangle, null, false);
-        }
-
-        private void tsmiTrayDiamond_Click(object sender, EventArgs e)
-        {
-            CaptureScreenshot(CaptureType.Diamond, null, false);
         }
 
         private void tsmiTrayPolygon_Click(object sender, EventArgs e)

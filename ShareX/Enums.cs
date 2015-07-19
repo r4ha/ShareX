@@ -122,10 +122,6 @@ namespace ShareX
         ActiveWindow,
         RectangleWindow,
         Rectangle,
-        RoundedRectangle,
-        Ellipse,
-        Triangle,
-        Diamond,
         Polygon,
         Freehand,
         CustomRegion,
@@ -159,10 +155,6 @@ namespace ShareX
         RectangleAnnotate,
         RectangleLight,
         RectangleTransparent,
-        RoundedRectangleRegion,
-        EllipseRegion,
-        TriangleRegion,
-        DiamondRegion,
         PolygonRegion,
         FreeHandRegion,
         CustomRegion,
@@ -192,6 +184,7 @@ namespace ShareX
         TweetMessage,
         MonitorTest,
         // Other
+        DisableHotkeys,
         OpenScreenshotsFolder
     }
 
@@ -216,6 +209,8 @@ namespace ShareX
         AnnotateImage,
         [Description("Copy image to clipboard")]
         CopyImageToClipboard,
+        [Description("Copy URL")]
+        CopyUrl,
         [Description("Open file")]
         OpenFile,
         [Description("Open folder")]
@@ -223,7 +218,7 @@ namespace ShareX
         [Description("Open URL")]
         OpenUrl,
         [Description("Upload")]
-        Upload,
+        Upload
     }
 
     public enum FileExistAction // Localized

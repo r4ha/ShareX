@@ -24,6 +24,7 @@
 #endregion License Information (GPL v3)
 
 using ShareX.HelpersLib;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -33,16 +34,28 @@ namespace ShareX.ScreenCaptureLib
 {
     public class AreaManager
     {
-        public List<Rectangle> Areas { get; private set; }
-        public int SelectedAreaIndex { get; private set; }
+        public List<RegionInfo> Areas { get; private set; }
 
-        public List<Rectangle> GetValidAreas
+        public RegionInfo[] ValidAreas
         {
             get
             {
-                List<Rectangle> areas = new List<Rectangle>();
-                areas.AddRange(Areas.Where(IsAreaValid));
-                return areas;
+                return Areas.Where(x => IsAreaValid(x.Area)).ToArray();
+            }
+        }
+
+        public int SelectedAreaIndex { get; private set; }
+
+        public RegionInfo CurrentRegionInfo
+        {
+            get
+            {
+                if (SelectedAreaIndex > -1)
+                {
+                    return Areas[SelectedAreaIndex];
+                }
+
+                return null;
             }
         }
 
@@ -52,7 +65,7 @@ namespace ShareX.ScreenCaptureLib
             {
                 if (SelectedAreaIndex > -1)
                 {
-                    return Areas[SelectedAreaIndex];
+                    return Areas[SelectedAreaIndex].Area;
                 }
 
                 return Rectangle.Empty;
@@ -61,7 +74,7 @@ namespace ShareX.ScreenCaptureLib
             {
                 if (SelectedAreaIndex > -1)
                 {
-                    Areas[SelectedAreaIndex] = value;
+                    Areas[SelectedAreaIndex].Area = value;
                 }
             }
         }
@@ -83,6 +96,10 @@ namespace ShareX.ScreenCaptureLib
                 return IsAreaValid(CurrentHoverArea);
             }
         }
+
+        public float RoundedRectangleRadius { get; set; }
+        public int RoundedRectangleRadiusIncrement { get; set; }
+        public TriangleAngle TriangleAngle { get; set; }
 
         public ResizeManager ResizeManager { get; private set; }
         public bool IsCreating { get; private set; }
@@ -111,10 +128,12 @@ namespace ShareX.ScreenCaptureLib
             this.surface = surface;
             ResizeManager = new ResizeManager(surface, this);
 
-            MinimumSize = 10;
-
-            Areas = new List<Rectangle>();
+            Areas = new List<RegionInfo>();
             SelectedAreaIndex = -1;
+            RoundedRectangleRadius = 25;
+            RoundedRectangleRadiusIncrement = 3;
+            TriangleAngle = TriangleAngle.Top;
+            MinimumSize = 10;
 
             surface.MouseDown += surface_MouseDown;
             surface.MouseUp += surface_MouseUp;
@@ -124,9 +143,64 @@ namespace ShareX.ScreenCaptureLib
 
         private void surface_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.ShiftKey)
+            switch (e.KeyData)
             {
-                proportionalResizing = true;
+                case Keys.ShiftKey:
+                    proportionalResizing = true;
+                    break;
+                case Keys.NumPad1:
+                    ChangeCurrentShape(RegionShape.Rectangle);
+                    break;
+                case Keys.NumPad2:
+                    ChangeCurrentShape(RegionShape.RoundedRectangle);
+                    break;
+                case Keys.NumPad3:
+                    ChangeCurrentShape(RegionShape.Ellipse);
+                    break;
+                case Keys.NumPad4:
+                    ChangeCurrentShape(RegionShape.Triangle);
+                    break;
+                case Keys.NumPad5:
+                    ChangeCurrentShape(RegionShape.Diamond);
+                    break;
+                case Keys.Add:
+                    switch (surface.Config.CurrentRegionShape)
+                    {
+                        case RegionShape.RoundedRectangle:
+                            RoundedRectangleRadius += RoundedRectangleRadiusIncrement;
+                            break;
+                        case RegionShape.Triangle:
+                            if (TriangleAngle == TriangleAngle.Left)
+                            {
+                                TriangleAngle = TriangleAngle.Top;
+                            }
+                            else
+                            {
+                                TriangleAngle++;
+                            }
+                            break;
+                    }
+                    UpdateCurrentRegionInfo();
+                    break;
+                case Keys.Subtract:
+                    switch (surface.Config.CurrentRegionShape)
+                    {
+                        case RegionShape.RoundedRectangle:
+                            RoundedRectangleRadius = Math.Max(0, RoundedRectangleRadius - RoundedRectangleRadiusIncrement);
+                            break;
+                        case RegionShape.Triangle:
+                            if (TriangleAngle == TriangleAngle.Top)
+                            {
+                                TriangleAngle = TriangleAngle.Left;
+                            }
+                            else
+                            {
+                                TriangleAngle--;
+                            }
+                            break;
+                    }
+                    UpdateCurrentRegionInfo();
+                    break;
             }
         }
 
@@ -228,8 +302,7 @@ namespace ShareX.ScreenCaptureLib
                         rect = new Rectangle(e.Location, new Size(1, 1));
                     }
 
-                    Areas.Add(rect);
-                    SelectedAreaIndex = Areas.Count - 1;
+                    AddRegionInfo(rect);
                 }
             }
         }
@@ -261,8 +334,7 @@ namespace ShareX.ScreenCaptureLib
 
                 if (!CurrentHoverArea.IsEmpty)
                 {
-                    Areas.Add(CurrentHoverArea);
-                    SelectedAreaIndex = Areas.Count - 1;
+                    AddRegionInfo(CurrentHoverArea);
 
                     if (surface.Config.QuickCrop)
                     {
@@ -288,6 +360,38 @@ namespace ShareX.ScreenCaptureLib
                 {
                     surface.Close(SurfaceResult.Close);
                 }
+            }
+        }
+
+        private void ChangeCurrentShape(RegionShape shape)
+        {
+            surface.Config.CurrentRegionShape = shape;
+            UpdateCurrentRegionInfo();
+        }
+
+        private void AddRegionInfo(Rectangle rect)
+        {
+            Areas.Add(GetRegionInfo(rect));
+            SelectedAreaIndex = Areas.Count - 1;
+        }
+
+        public RegionInfo GetRegionInfo(Rectangle rect)
+        {
+            RegionInfo regionInfo = new RegionInfo(rect, surface.Config.CurrentRegionShape);
+            regionInfo.RoundedRectangleRadius = RoundedRectangleRadius;
+            regionInfo.TriangleAngle = TriangleAngle;
+            return regionInfo;
+        }
+
+        private void UpdateCurrentRegionInfo()
+        {
+            RegionInfo regionInfo = CurrentRegionInfo;
+
+            if (regionInfo != null)
+            {
+                regionInfo.Shape = surface.Config.CurrentRegionShape;
+                regionInfo.RoundedRectangleRadius = RoundedRectangleRadius;
+                regionInfo.TriangleAngle = TriangleAngle;
             }
         }
 
@@ -323,7 +427,7 @@ namespace ShareX.ScreenCaptureLib
         {
             for (int i = Areas.Count - 1; i >= 0; i--)
             {
-                if (Areas[i].Contains(mousePosition))
+                if (Areas[i].Area.Contains(mousePosition))
                 {
                     return i;
                 }
@@ -343,7 +447,7 @@ namespace ShareX.ScreenCaptureLib
 
             if (areaIndex > -1)
             {
-                return Areas[areaIndex];
+                return Areas[areaIndex].Area;
             }
 
             return Rectangle.Empty;
@@ -356,15 +460,15 @@ namespace ShareX.ScreenCaptureLib
 
         public Rectangle CombineAreas()
         {
-            List<Rectangle> areas = GetValidAreas;
+            RegionInfo[] areas = ValidAreas;
 
-            if (areas.Count > 0)
+            if (areas.Length > 0)
             {
-                Rectangle rect = areas[0];
+                Rectangle rect = areas[0].Area;
 
-                for (int i = 1; i < areas.Count; i++)
+                for (int i = 1; i < areas.Length; i++)
                 {
-                    rect = Rectangle.Union(rect, areas[i]);
+                    rect = Rectangle.Union(rect, areas[i].Area);
                 }
 
                 return rect;

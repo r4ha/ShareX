@@ -473,9 +473,10 @@ namespace ShareX
             return filepath;
         }
 
-        public static void OpenDropWindow()
+        public static void OpenDropWindow(TaskSettings taskSettings = null)
         {
-            DropForm.GetInstance(Program.Settings.DropSize, Program.Settings.DropOffset, Program.Settings.DropAlignment, Program.Settings.DropOpacity, Program.Settings.DropHoverOpacity).ShowActivate();
+            DropForm.GetInstance(Program.Settings.DropSize, Program.Settings.DropOffset, Program.Settings.DropAlignment, Program.Settings.DropOpacity,
+                Program.Settings.DropHoverOpacity, taskSettings).ShowActivate();
         }
 
         public static void StartScreenRecording(ScreenRecordOutput outputType, ScreenRecordStartMethod startMethod, TaskSettings taskSettings = null)
@@ -755,6 +756,24 @@ namespace ShareX
             }
 
             return EDataType.File;
+        }
+
+        public static bool ToggleHotkeys()
+        {
+            bool result = !Program.Settings.DisableHotkeys;
+            Program.Settings.DisableHotkeys = result;
+
+            Program.MainForm.UpdateToggleHotkeyButton();
+
+            if (Program.MainForm.niTray.Visible)
+            {
+                Program.MainForm.niTray.Tag = null;
+                // TODO: Translate
+                string balloonTipText = result ? "Hotkeys disabled." : "Hotkeys enabled.";
+                Program.MainForm.niTray.ShowBalloonTip(3000, "ShareX", balloonTipText, ToolTipIcon.Info);
+            }
+
+            return result;
         }
     }
 }

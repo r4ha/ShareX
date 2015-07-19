@@ -72,6 +72,7 @@ namespace ShareX.ScreenCaptureLib
         public RectangleRegion()
         {
             AreaManager = new AreaManager(this);
+
             KeyDown += RectangleRegion_KeyDown;
             MouseDown += RectangleRegion_MouseDown;
             MouseWheel += RectangleRegion_MouseWheel;
@@ -189,13 +190,13 @@ namespace ShareX.ScreenCaptureLib
 
         protected override void Draw(Graphics g)
         {
-            List<Rectangle> areas = AreaManager.GetValidAreas;
+            RegionInfo[] areas = AreaManager.ValidAreas;
 
-            if (areas.Count > 0 || !AreaManager.CurrentHoverArea.IsEmpty)
+            if (areas.Length > 0 || !AreaManager.CurrentHoverArea.IsEmpty)
             {
                 UpdateRegionPath();
 
-                if (areas.Count > 0)
+                if (areas.Length > 0)
                 {
                     if (Config.UseDimming)
                     {
@@ -228,7 +229,7 @@ namespace ShareX.ScreenCaptureLib
                 {
                     using (GraphicsPath hoverDrawPath = new GraphicsPath { FillMode = FillMode.Winding })
                     {
-                        AddShapePath(hoverDrawPath, AreaManager.CurrentHoverArea.SizeOffset(-1));
+                        AddShapePath(hoverDrawPath, AreaManager.GetRegionInfo(AreaManager.CurrentHoverArea), -1);
 
                         g.DrawPath(borderPen, hoverDrawPath);
                         g.DrawPath(borderDotPen, hoverDrawPath);
@@ -255,12 +256,12 @@ namespace ShareX.ScreenCaptureLib
 
                 if (Config.ShowInfo)
                 {
-                    foreach (Rectangle area in areas)
+                    foreach (RegionInfo regionInfo in areas)
                     {
-                        if (area.IsValid())
+                        if (regionInfo.Area.IsValid())
                         {
-                            string areaText = GetAreaText(area);
-                            DrawAreaText(g, areaText, area);
+                            string areaText = GetAreaText(regionInfo.Area);
+                            DrawAreaText(g, areaText, regionInfo.Area);
                         }
                     }
                 }
@@ -407,6 +408,29 @@ namespace ShareX.ScreenCaptureLib
             sb.AppendLine(string.Format("[I] {0} position and size info", Config.ShowInfo ? "Hide" : "Show"));
             sb.AppendLine(string.Format("[M] {0} magnifier", Config.ShowMagnifier ? "Hide" : "Show"));
             sb.AppendLine(string.Format("[C] {0} screen wide crosshair", Config.ShowCrosshair ? "Hide" : "Show"));
+
+            sb.AppendLine();
+
+            if (Config.CurrentRegionShape == RegionShape.Rectangle) sb.Append("-> ");
+            sb.AppendLine("[Numpad 1] Rectangle shape");
+            if (Config.CurrentRegionShape == RegionShape.RoundedRectangle) sb.Append("-> ");
+            sb.AppendLine("[Numpad 2] Rounded rectangle shape");
+            if (Config.CurrentRegionShape == RegionShape.Ellipse) sb.Append("-> ");
+            sb.AppendLine("[Numpad 3] Ellipse shape");
+            if (Config.CurrentRegionShape == RegionShape.Triangle) sb.Append("-> ");
+            sb.AppendLine("[Numpad 4] Triangle shape");
+            if (Config.CurrentRegionShape == RegionShape.Diamond) sb.Append("-> ");
+            sb.AppendLine("[Numpad 5] Diamond shape");
+
+            switch (Config.CurrentRegionShape)
+            {
+                case RegionShape.RoundedRectangle:
+                    sb.AppendLine("[Numpad + or -] Change rounded rectangle corner radius");
+                    break;
+                case RegionShape.Triangle:
+                    sb.AppendLine("[Numpad + or -] Change triangle angle");
+                    break;
+            }
         }
 
         private string GetAreaText(Rectangle area)
@@ -594,16 +618,36 @@ namespace ShareX.ScreenCaptureLib
             regionFillPath = new GraphicsPath { FillMode = FillMode.Winding };
             regionDrawPath = new GraphicsPath { FillMode = FillMode.Winding };
 
-            foreach (Rectangle area in AreaManager.GetValidAreas)
+            foreach (RegionInfo regionInfo in AreaManager.ValidAreas)
             {
-                AddShapePath(regionFillPath, area);
-                AddShapePath(regionDrawPath, area.SizeOffset(-1));
+                AddShapePath(regionFillPath, regionInfo);
+                AddShapePath(regionDrawPath, regionInfo, -1);
             }
         }
 
-        protected virtual void AddShapePath(GraphicsPath graphicsPath, Rectangle rect)
+        protected virtual void AddShapePath(GraphicsPath graphicsPath, RegionInfo regionInfo, int sizeOffset = 0)
         {
-            graphicsPath.AddRectangle(rect);
+            Rectangle area = regionInfo.Area.SizeOffset(sizeOffset);
+
+            switch (regionInfo.Shape)
+            {
+                default:
+                case RegionShape.Rectangle:
+                    graphicsPath.AddRectangle(area);
+                    break;
+                case RegionShape.RoundedRectangle:
+                    graphicsPath.AddRoundedRectangle(area, regionInfo.RoundedRectangleRadius);
+                    break;
+                case RegionShape.Ellipse:
+                    graphicsPath.AddEllipse(area);
+                    break;
+                case RegionShape.Triangle:
+                    graphicsPath.AddTriangle(area, regionInfo.TriangleAngle);
+                    break;
+                case RegionShape.Diamond:
+                    graphicsPath.AddDiamond(area);
+                    break;
+            }
         }
 
         protected override void Dispose(bool disposing)
