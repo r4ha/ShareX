@@ -683,7 +683,7 @@ namespace ShareX
                         albumID = Program.UploadersConfig.ImgurSelectedAlbum.id;
                     }
 
-                    imageUploader = new Imgur_v3(Program.UploadersConfig.ImgurOAuth2Info)
+                    imageUploader = new Imgur(Program.UploadersConfig.ImgurOAuth2Info)
                     {
                         UploadMethod = Program.UploadersConfig.ImgurAccountType,
                         DirectLink = Program.UploadersConfig.ImgurDirectLink,
@@ -1074,6 +1074,27 @@ namespace ShareX
                         APIKEY = Program.UploadersConfig.AdFlyAPIKEY,
                         APIUID = Program.UploadersConfig.AdFlyAPIUID
                     };
+                    break;
+                case UrlShortenerType.LnkU:
+                    urlShortener = new LnkUURLShortener
+                    {
+                        API_KEY = Program.UploadersConfig.LnkUAPIKEY
+                    };
+                    break;
+                case UrlShortenerType.CoinURL:
+                    urlShortener = new CoinURLShortener
+                    {
+                        UUID = Program.UploadersConfig.CoinURLUUID
+                    };
+                    break;
+                case UrlShortenerType.QRnet:
+                    urlShortener = new QRnetURLShortener();
+                    break;
+                case UrlShortenerType.VURL:
+                    urlShortener = new VURLShortener();
+                    break;
+                case UrlShortenerType.TwoGP:
+                    urlShortener = new TwoGPURLShortener();
                     break;
                 case UrlShortenerType.CustomURLShortener:
                     CustomUploaderItem customUploader = GetCustomUploader(Program.UploadersConfig.CustomURLShortenerSelected);
